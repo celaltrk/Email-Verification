@@ -8,25 +8,7 @@ This project implements an email verification system using Nest.js. It provides 
 
 To use this project, follow these steps:
 
-1. Clone the repository:
-
-```bash
-git clone https://github.com/celaltrk/email-verification
-```
-
-2. Navigate to the project directory:
-
-```bash
-cd email-verification
-```
-
-3. Install dependencies:
-
-```bash
-npm install 
-```
-
-4. Set up environment variables:
+1. Set up environment variables:
 
 Create a `.env` file in the root directory of the project and add the following variables:
 
@@ -37,13 +19,13 @@ GMAIL_PASS=your-gmail-password
 
 Replace `your-gmail-address@gmail.com` and `your-gmail-password` with your Gmail address and password. Ensure that you have allowed less secure apps access in your Gmail settings or use Gmail app passwords if you have two-step verification enabled.
 
-5. Run the application:
+2. Run the application:
 
 ```bash
 npm run start
 ```
 
-6. Use the API endpoints to register users and verify their emails.
+3. Use the API endpoints to register users and verify their emails.
 
 ### API Endpoints
 
@@ -64,25 +46,10 @@ npm run start
 
 ### Testing
 
-You can test the API endpoints using tools like cURL or Postman. Here are example cURL commands:
-
-```bash
-# Register a new user
-curl -X POST http://localhost:3000/user/register \
--H "Content-Type: application/json" \
--d '{"username": "example", "email": "user@example.com"}'
-
-# Verify the user's email
-curl http://localhost:3000/user/verify-email/example/someGeneratedToken
-
-# Check verification status
-curl http://localhost:3000/user/check-verification/example
-```
-
-Ensure to replace `someGeneratedToken` with the actual token received in the verification email.
+There is a bash file for testing located in "test" folder.
 
 ## Credits
 
 This project was built with [Nest.js](https://nestjs.com/).
 
-The code was mainly created using ChatGPT language model.
+The code was created with some help by ChatGPT language model.
