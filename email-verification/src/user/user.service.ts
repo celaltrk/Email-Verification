@@ -1,5 +1,5 @@
 // src/user/user.service.ts
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
@@ -11,38 +11,46 @@ import { randomBytes } from 'crypto';
 export class UserService {
   constructor(
     @InjectRepository(User)
-    private usersRepository: Repository<User>,
+    private userRepository: Repository<User>,
     private mailService: MailService,
   ) {}
 
-  async register(createUserDto: CreateUserDto): Promise<void> {
+  // Register a new user (do not register if user already exists)
+  async register(createUserDto: CreateUserDto): Promise<boolean> {
     const verificationToken = randomBytes(20).toString('hex');
-    const user = this.usersRepository.create({
+    const user = this.userRepository.create({
       ...createUserDto,
       verificationToken,
       isVerified: false,
     });
-    await this.usersRepository.save(user);
-    await this.mailService.sendVerificationEmail(user.email, user.username, verificationToken);
-  }
-
-  // Verification of email using the verification token
-  async verifyEmail(username: string, verificationToken: string): Promise<boolean> {
-    const user = await this.usersRepository.findOne({ where: { username } });
-    if (!user || user.verificationToken !== verificationToken) {
-      return false;
+    if (await this.userRepository.findOne({ where: { email: user.email} }) || await this.userRepository.findOne({ where: { username: user.username} })) {
+      throw new BadRequestException('Username or email is already in use');
     }
-    user.isVerified = true;
-    await this.usersRepository.save(user);
+    await this.userRepository.save(user);
+    await this.mailService.sendVerificationEmail(user.email, user.username, verificationToken);
     return true;
   }
 
-  // Check if the user is verified
-  async checkVerification(username: string): Promise<boolean> {
-    const user = await this.usersRepository.findOne({ where: { username } });
+  // Verify email of a user
+  async verifyEmail(username: string): Promise<boolean> {
+    const user = await this.userRepository.findOne({ where: { username } });
     if (!user) {
-      return false;
+      throw new NotFoundException('User not found');
     }
-    return user.isVerified;
+    if (user.isVerified) {
+      throw new BadRequestException('User is already verified');
+    }
+    user.isVerified = true;
+    await this.userRepository.save(user);
+    return true;
+  }
+
+  // Find user by username
+  async findByUsername(username: string): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { username } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user;
   }
 }

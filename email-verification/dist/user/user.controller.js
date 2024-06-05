@@ -21,21 +21,19 @@ let UserController = class UserController {
         this.userService = userService;
     }
     async register(createUserDto) {
-        await this.userService.register(createUserDto);
+        return await this.userService.register(createUserDto);
     }
     async verifyEmail(username, verificationToken) {
-        const isVerified = await this.userService.verifyEmail(username, verificationToken);
-        if (!isVerified) {
+        const user = await this.userService.findByUsername(username);
+        if (user.verificationToken !== verificationToken) {
             throw new common_1.BadRequestException('Invalid verification token');
         }
-        return 'Email successfully verified';
+        await this.userService.verifyEmail(username);
+        return "Email verified successfully";
     }
     async checkVerification(username) {
-        const isVerified = await this.userService.checkVerification(username);
-        if (!isVerified) {
-            return 'User is not verified';
-        }
-        return 'User is verified';
+        const user = await this.userService.findByUsername(username);
+        return user.isVerified ? 'User is verified' : 'User is not verified';
     }
 };
 exports.UserController = UserController;

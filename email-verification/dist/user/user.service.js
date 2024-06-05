@@ -20,35 +20,42 @@ const user_entity_1 = require("./entities/user.entity");
 const mail_service_1 = require("../mail/mail.service");
 const crypto_1 = require("crypto");
 let UserService = class UserService {
-    constructor(usersRepository, mailService) {
-        this.usersRepository = usersRepository;
+    constructor(userRepository, mailService) {
+        this.userRepository = userRepository;
         this.mailService = mailService;
     }
     async register(createUserDto) {
         const verificationToken = (0, crypto_1.randomBytes)(20).toString('hex');
-        const user = this.usersRepository.create({
+        const user = this.userRepository.create({
             ...createUserDto,
             verificationToken,
             isVerified: false,
         });
-        await this.usersRepository.save(user);
-        await this.mailService.sendVerificationEmail(user.email, user.username, verificationToken);
-    }
-    async verifyEmail(username, verificationToken) {
-        const user = await this.usersRepository.findOne({ where: { username } });
-        if (!user || user.verificationToken !== verificationToken) {
-            return false;
+        if (await this.userRepository.findOne({ where: { email: user.email } }) || await this.userRepository.findOne({ where: { username: user.username } })) {
+            throw new common_1.BadRequestException('Username or email is already in use');
         }
-        user.isVerified = true;
-        await this.usersRepository.save(user);
+        await this.userRepository.save(user);
+        await this.mailService.sendVerificationEmail(user.email, user.username, verificationToken);
         return true;
     }
-    async checkVerification(username) {
-        const user = await this.usersRepository.findOne({ where: { username } });
+    async verifyEmail(username) {
+        const user = await this.userRepository.findOne({ where: { username } });
         if (!user) {
-            return false;
+            throw new common_1.NotFoundException('User not found');
         }
-        return user.isVerified;
+        if (user.isVerified) {
+            throw new common_1.BadRequestException('User is already verified');
+        }
+        user.isVerified = true;
+        await this.userRepository.save(user);
+        return true;
+    }
+    async findByUsername(username) {
+        const user = await this.userRepository.findOne({ where: { username } });
+        if (!user) {
+            throw new common_1.NotFoundException('User not found');
+        }
+        return user;
     }
 };
 exports.UserService = UserService;

@@ -1,5 +1,5 @@
 // src/user/user.controller.ts
-import { Controller, Post, Body, Get, Param, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, BadRequestException } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 
@@ -7,28 +7,27 @@ import { CreateUserDto } from './dto/create-user.dto';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  // API 1: POST /user/register:
   @Post('register')
-  async register(@Body() createUserDto: CreateUserDto): Promise<void> {
-    await this.userService.register(createUserDto);
+  async register(@Body() createUserDto: CreateUserDto): Promise<boolean> {
+    return await this.userService.register(createUserDto);
   }
 
-  // Verification of email using the verification token
+  // API 2: GET /user/verify-email/{username}/{verificationToken}
   @Get('verify-email/:username/:verificationToken')
   async verifyEmail(@Param('username') username: string, @Param('verificationToken') verificationToken: string): Promise<string> {
-    const isVerified = await this.userService.verifyEmail(username, verificationToken);
-    if (!isVerified) {
+    const user = await this.userService.findByUsername(username);
+    if (user.verificationToken !== verificationToken) { 
       throw new BadRequestException('Invalid verification token');
     }
-    return 'Email successfully verified';
+    await this.userService.verifyEmail(username);
+    return "Email verified successfully";
   }
 
-  // Check if the user is verified
+  // API 3: GET /user/check-verification/{username}:
   @Get('check-verification/:username')
   async checkVerification(@Param('username') username: string): Promise<string> {
-    const isVerified = await this.userService.checkVerification(username);
-    if (!isVerified) {
-      return 'User is not verified';
-    }
-    return 'User is verified';
+    const user = await this.userService.findByUsername(username);
+    return user.isVerified ? 'User is verified' : 'User is not verified';
   }
 }

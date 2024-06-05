@@ -3,10 +3,10 @@ import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { MailService } from '../mail/mail.service';
 export declare class UserService {
-    private usersRepository;
+    private userRepository;
     private mailService;
-    constructor(usersRepository: Repository<User>, mailService: MailService);
-    register(createUserDto: CreateUserDto): Promise<void>;
-    verifyEmail(username: string, verificationToken: string): Promise<boolean>;
-    checkVerification(username: string): Promise<boolean>;
+    constructor(userRepository: Repository<User>, mailService: MailService);
+    register(createUserDto: CreateUserDto): Promise<boolean>;
+    verifyEmail(username: string): Promise<boolean>;
+    findByUsername(username: string): Promise<User>;
 }
